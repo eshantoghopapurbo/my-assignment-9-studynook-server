@@ -1,11 +1,16 @@
 const express = require('express')
 const dontenv =require("dotenv")
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const cors = require('cors')
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 dontenv.config()
 
 const uri = process.env.MONGODB_URL;
 const app = express()
 const port = process.env.PORT||5000
+
+app.use(cors())
+app.use(express.json())
+
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -17,9 +22,29 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    // Send a ping to confirm a successful connection
+
+    const db =client.db('studynook')
+    const addroomCollection =db.collection("addrooms")
+
+     app.get("/rooms",async(req,res)=>{
+        const result =await addroomCollection.find().toArray()
+        res.json(result)
+     })
+    
+    app.post("/addroom",async (req,res)=>{
+        const addroomData = req.body
+        console.log(addroomData);
+        const result =await addroomCollection.insertOne(addroomData)
+        res.json(result)
+    })
+
+    app.get("/rooms/:id",async(req,res)=> {
+        const {id} =req.params
+        const result =await addroomCollection.findOne({_id: new ObjectId(id)})
+        res.json(result)
+    })
+
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
