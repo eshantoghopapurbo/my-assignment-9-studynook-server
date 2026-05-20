@@ -31,6 +31,11 @@ async function run() {
         const result =await addroomCollection.find().toArray()
         res.json(result)
      })
+
+     app.get("/feautersection",async(req,res)=>{
+      const result = await addroomCollection.find().limit(6).toArray()
+      res.json(result);
+     })
     
     app.post("/addroom",async (req,res)=>{
         const addroomData = req.body
@@ -54,6 +59,12 @@ async function run() {
          {$set:updatedData}
       )
       res.json(result) 
+    })
+
+    app.delete("/rooms/:id",async(req,res)=> {
+      const {id} = req.params;
+      const result =await addroomCollection.deleteOne({_id: new ObjectId(id)})
+      res.json(result)
     })
 
     await client.db("admin").command({ ping: 1 });
