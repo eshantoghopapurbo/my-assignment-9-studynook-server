@@ -1,8 +1,8 @@
 const express = require('express')
-const dontenv =require("dotenv")
+const dotenv = require("dotenv")
 const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-dontenv.config()
+dotenv.config()
 
 const uri = process.env.MONGODB_URL;
 const app = express()
@@ -10,7 +10,6 @@ const port = process.env.PORT||5000
 
 app.use(cors())
 app.use(express.json())
-
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -26,11 +25,21 @@ async function run() {
 
     const db =client.db('studynook')
     const addroomCollection =db.collection("addrooms")
+    const addBookCollection =db.collection("bookscollection")
 
      app.get("/rooms",async(req,res)=>{
         const result =await addroomCollection.find().toArray()
         res.json(result)
      })
+
+    //  mylisting api 
+    app.get("/mylisting",async(req,res)=>{
+      const email =req.query.email
+      console.log(email);
+      const result = await addroomCollection.find({email:email}).toArray()
+      res.json(result)
+     })
+      
 
      app.get("/feautersection",async(req,res)=>{
       const result = await addroomCollection.find().limit(6).toArray()
@@ -43,6 +52,33 @@ async function run() {
         const result =await addroomCollection.insertOne(addroomData)
         res.json(result)
     })
+
+
+    // post booking data 
+    app.post("/mybookins",async (req,res)=>{
+        const addbookData = req.body
+        
+        const result =await addBookCollection.insertOne(addbookData)
+        res.json(result)
+    })
+    // get booking data 
+      app.get("/mybookins",async(req,res)=>{
+        const {email} =req.query
+        const query ={email:email};
+
+        const result =await addBookCollection.find(query).toArray()
+        res.json(result)
+     })
+
+    //  delete booking
+    app.delete("/mybookins/:id",async(req,res)=>{
+      const {id} =req.params;
+      const query ={_id :new ObjectId(id)};
+      const result = await addBookCollection.deleteOne(query);
+      res.send(result)
+
+    })
+
 
     app.get("/rooms/:id",async(req,res)=> {
         const {id} =req.params
@@ -61,6 +97,7 @@ async function run() {
       res.json(result) 
     })
 
+
     app.delete("/rooms/:id",async(req,res)=> {
       const {id} = req.params;
       const result =await addroomCollection.deleteOne({_id: new ObjectId(id)})
@@ -70,8 +107,6 @@ async function run() {
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
   }
 }
 run().catch(console.dir);
